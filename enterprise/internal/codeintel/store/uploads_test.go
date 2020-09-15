@@ -570,7 +570,6 @@ func TestDequeueConversionError(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	// TODO - update these to use GetStates
 	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "errored" {

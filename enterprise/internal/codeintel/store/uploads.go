@@ -200,7 +200,6 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	defer func() { err = tx.Done(err) }()
 
 	var conds []*sqlf.Query
-
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
@@ -212,7 +211,6 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	} else {
 		conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
 	}
-
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id)"))
 	}
