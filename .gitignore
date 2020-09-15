@@ -141,3 +141,6 @@ storybook-static/
 
 # sonarqube
 .scannerwork
+
+# vagrant files
+.vagrant/
