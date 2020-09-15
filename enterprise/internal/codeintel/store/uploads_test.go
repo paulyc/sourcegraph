@@ -570,6 +570,7 @@ func TestDequeueConversionError(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
+	// TODO - update these to use GetStates
 	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "errored" {
@@ -912,6 +913,27 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 		if deletedStates != expected {
 			t.Errorf("unexpected number of deleted records. want=%d have=%d", expected, deletedStates)
 		}
+	}
+}
+
+func TestHardDeleteUploadByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "deleted"})
+
+	if err := store.HardDeleteUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error deleting upload: %s", err)
+	}
+
+	// Ensure records were deleted
+	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if len(states) != 0 {
+		t.Fatalf("unexpected record")
 	}
 }
 

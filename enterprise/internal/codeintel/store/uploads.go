@@ -475,6 +475,11 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 	`, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
 }
 
+// HardDeleteUploadByID deletes the upload record with the given identifier.
+func (s *store) HardDeleteUploadByID(ctx context.Context, id int) error {
+	return s.queryForEffect(ctx, sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id = %s`, id))
+}
+
 // StalledUploadMaxAge is the maximum allowable duration between updating the state of an
 // upload as "processing" and locking the upload row during processing. An unlocked row that
 // is marked as processing likely indicates that the worker that dequeued the upload has died.
