@@ -9,9 +9,12 @@
   username: buildkite
   ssh_key_path: "~/.ssh/id_rsa"
   shell_commands:
-    - "cd /sourcegraph && asdf install"
     - |
       cd /sourcegraph
+      source ~/.nvm/nvm.sh
+      source ~/.profile
+      source ~/.bashrc
+      nvm install
       pushd enterprise
       ./cmd/server/pre-build.sh
-    - "/sourcegraph/test/e2e/smoke-test.sh"
+    # - "/sourcegraph/test/e2e/smoke-test.sh"

@@ -49,6 +49,37 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
       srv.vm.provision 'shell', inline: <<-SHELL
         #!/usr/bin/env bash
+# Go
+sudo add-apt-repository ppa:longsleep/golang
+echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.listbackports
+
+        apt-get update
+        apt-get install -y --no-install-recommends jq
+        # build-essential \
+        # curl \
+        # libbz2-dev \
+        # libffi-dev \
+        # liblzma-dev \
+        # libncurses5-dev \
+        # libncursesw5-dev \
+        # libreadline-dev \
+        # libsqlite3-dev \
+        # libssl-dev \
+        # llvm \
+        # make \
+        # python-openssl \
+        # tk-dev \
+        # wget \
+        # xz-utils \
+        # libpcre3-dev pkg-config musl-tools \
+        # golang-go \
+        # zlib1g-dev && \
+        curl -o /root/go.tar.gz -L https://golang.org/dl/go1.15.2.linux-amd64.tar.gz
+        tar -C /usr/local -xzf /root/go.tar.gz
+        echo "export PATH=$PATH:/usr/local/go/bin" >> /root/.profile
+        ssh-keyscan -H github.com >> /root/.ssh/known_hosts
+        NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
+        curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh | sh
       SHELL
 
       server['shell_commands'].each do |sh|
