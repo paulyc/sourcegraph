@@ -42,44 +42,55 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         g.network = server['network']
         g.external_ip = external_ip
         g.use_private_ip = use_private_ip
-        g.disk_size = 20
+        g.disk_size = 40
+        g.disk_type = 'pd-ssd'
         o.ssh.username = username
         o.ssh.private_key_path = ssh_key_path
       end
 
       srv.vm.provision 'shell', inline: <<-SHELL
         #!/usr/bin/env bash
-# Go
-sudo add-apt-repository ppa:longsleep/golang
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.listbackports
+
 
         apt-get update
         apt-get install -y --no-install-recommends jq
-        # build-essential \
-        # curl \
-        # libbz2-dev \
-        # libffi-dev \
-        # liblzma-dev \
-        # libncurses5-dev \
-        # libncursesw5-dev \
-        # libreadline-dev \
-        # libsqlite3-dev \
-        # libssl-dev \
-        # llvm \
-        # make \
-        # python-openssl \
-        # tk-dev \
-        # wget \
-        # xz-utils \
-        # libpcre3-dev pkg-config musl-tools \
-        # golang-go \
-        # zlib1g-dev && \
-        curl -o /root/go.tar.gz -L https://golang.org/dl/go1.15.2.linux-amd64.tar.gz
-        tar -C /usr/local -xzf /root/go.tar.gz
-        echo "export PATH=$PATH:/usr/local/go/bin" >> /root/.profile
+        libbz2-dev \
+        libffi-dev \
+        liblzma-dev \
+        libncurses5-dev \
+        libncursesw5-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libssl-dev \
+        llvm \
+        python-openssl \
+        tk-dev \
+        wget \
+        xz-utils \
+        libpcre3-dev pkg-config musl-tools \
+        zlib1g-dev
         ssh-keyscan -H github.com >> /root/.ssh/known_hosts
         NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
         curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh | sh
+        cat << EOF >> /root/.profile
+export ENTERPRISE="1"
+export DOCKER_BUILDKIT="1"
+export ENTERPRISE="1"
+export FORCE_COLOR="3"
+export GO111MODULE="on"
+export IMAGE="server_instrumented"
+export TAG="$a234q234q234q234"
+export COVERAGE_INSTRUMENT="true"
+export TEST_USER_PASSWORD="SuperSecurePassword"
+export VERSION=3.20.0
+# export PGPORT=5432
+# export PGHOST=localhost
+export PGUSER=postgres
+# export PGPASSWORD=sourcegraph
+export PGDATABASE=postgres
+export PGSSLMODE=disable
+EOF
+
       SHELL
 
       server['shell_commands'].each do |sh|

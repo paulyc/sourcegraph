@@ -13,8 +13,11 @@
       cd /sourcegraph
       source ~/.nvm/nvm.sh
       source ~/.profile
-      source ~/.bashrc
       nvm install
+      asdf install
       pushd enterprise
       ./cmd/server/pre-build.sh
-    # - "/sourcegraph/test/e2e/smoke-test.sh"
+      VERSION=3.20.0 ./cmd/server/build.sh
+      popd
+      /dev/ci/e2e.sh
+    - "/sourcegraph/test/e2e/smoke-test.sh"
