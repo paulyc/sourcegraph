@@ -1,4 +1,4 @@
-package migrations_test
+package migrations
 
 import (
 	"path/filepath"
@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
+// DO NOT HAND EDIT
+// THis constant is updated automatically by the ./dev/db/squash_migrations.sh script.
 const FirstMigration = 1528395684
 
 func TestIDConstraints(t *testing.T) {
@@ -44,10 +44,11 @@ func TestNeedsGenerate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := migrations.AssetNames()
+	got := AssetNames()
+
 	sort.Strings(want)
 	sort.Strings(got)
 	if !reflect.DeepEqual(got, want) {
-		t.Fatal("bindata out of date. Please run:\n  go generate github.com/sourcegraph/sourcegraph/migrations")
+		t.Fatal("bindata out of date. Please run:\n  go generate github.com/sourcegraph/sourcegraph/migrations/...")
 	}
 }
