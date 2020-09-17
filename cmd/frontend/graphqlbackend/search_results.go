@@ -974,6 +974,16 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 	return result, nil
 }
 
+// setQuery sets a new query in the search resolver, for potentially repeated
+// calls in the search pipeline. The important part is it takes care of
+// invalidating cached repo info.
+func (r *searchResolver) setQuery(q []query.Node) {
+	r.resolved.repoRevs = nil
+	r.resolved.missingRepoRevs = nil
+	r.repoErr = nil
+	r.query.(*query.AndOrQuery).Query = q
+}
+
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
 func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopeParameters []query.Node, node query.Node) (*SearchResultsResolver, error) {
 	switch term := node.(type) {
@@ -981,13 +991,11 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 		if term.Kind == query.And || term.Kind == query.Or {
 			return r.evaluateOperator(ctx, scopeParameters, term)
 		} else if term.Kind == query.Concat {
-			q := append(scopeParameters, term)
-			r.query.(*query.AndOrQuery).Query = q
+			r.setQuery(append(scopeParameters, term))
 			return r.evaluateLeaf(ctx)
 		}
 	case query.Pattern:
-		q := append(scopeParameters, term)
-		r.query.(*query.AndOrQuery).Query = q
+		r.setQuery(append(scopeParameters, term))
 		return r.evaluateLeaf(ctx)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
@@ -1004,7 +1012,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 		return alertForQuery("", err).wrap(), nil
 	}
 	if pattern == nil {
-		r.query.(*query.AndOrQuery).Query = scopeParameters
+		r.setQuery(scopeParameters)
 		return r.evaluateLeaf(ctx)
 	}
 	result, err := r.evaluatePatternExpression(ctx, scopeParameters, pattern)
@@ -1020,7 +1028,24 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
-		return r.evaluate(ctx, q.Query)
+		var result *SearchResultsResolver
+		disjuncts := query.Dnf(q.Query)
+		for _, disjunct := range disjuncts {
+			disjunct = query.ConcatRevFilters(disjunct)
+			newResult, err := r.evaluate(ctx, disjunct)
+			if err != nil {
+				return nil, err // FIXME returns err if any subquery fails
+			}
+			if newResult != nil {
+				result = union(result, newResult)
+				// FIXME: must dedup at the repo level.
+				// FIXME: dedup for non-text searches like commit
+			}
+		}
+		if result != nil {
+			r.sortResults(ctx, result.SearchResults) // FIXME: also called in doResults, but maybe that doesn't return to this caller?
+		}
+		return result, nil // FIXME: this must be non-nil, but it is possible it can be nil. Just search space will trigger it.
 	}
 	// Unreachable.
 	return nil, fmt.Errorf("unrecognized type %s in searchResolver Results", reflect.TypeOf(r.query).String())
